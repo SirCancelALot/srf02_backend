@@ -5,6 +5,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import gnu.io.*;
+
 @EnableConfigurationProperties({Srf02Configuration.class})
 @Configuration
 public class DistanceMeasurementConfiguration {
@@ -17,14 +19,30 @@ public class DistanceMeasurementConfiguration {
 	
 	@Bean 
 	public DistanceMeasurementProvider getDistanceMeasurementProvider() throws Exception {
-		boolean isSimulation = true;
-		if(isSimulation) {
+		boolean isSimulated = true;
+		//String commPort = findPort();
+		if(isSimulated) {
 			System.out.println("Starting in SIMULATION mode");
 			return new SimulationDistanceProvider();
 		} else {
 			System.out.println("Starting in SENSOR mode");
-			return new Srf02Connector("COM2");
+
+			return new Srf02Connector("COM7");
 		}
 	}
 
+	/**private String findPort() throws Exception {
+		Enumeration<CommPortIdentifier> portEnum = CommPortIdentifier.getPortIdentifiers();
+
+		while ( portEnum.hasMoreElements() )
+		{
+			CommPortIdentifier portIdentifier = portEnum.nextElement();
+			if(portIdentifier.isCurrentlyOwned()){
+				continue;
+			}
+			System.out.println(portIdentifier.getName());
+			return portIdentifier.getName();
+		}
+		return null;
+	}**/
 }
