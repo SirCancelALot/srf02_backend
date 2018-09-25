@@ -15,7 +15,9 @@ public class Srf02Connector implements DistanceMeasurementProvider
 {
 	private static final int timeout = 100;
 	private static final int BAUD = 19200;
-	
+	private static final byte I2C_AD1 = 0x55;
+	private static final byte byteCount = 0x01;
+
 	private SerialPort port;
 	
 	public Srf02Connector(String comPort) throws Exception {
@@ -39,7 +41,7 @@ public class Srf02Connector implements DistanceMeasurementProvider
 	
 	@Override
 	public double getDistance() throws IOException, InterruptedException {
-		// TODO
+
 		return (double) -1;
 	}
 	
@@ -51,7 +53,7 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		os = port.getOutputStream();
 		is = port.getInputStream();
 		
-		byte[] cmd = {};	// TODO
+		byte[] cmd = {I2C_AD1, address, register};	// TODO
 		os.write(cmd);
 		os.flush();
 		
@@ -70,7 +72,7 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		os = port.getOutputStream();
 		is = port.getInputStream();
 		
-		byte[] cmd = {};	// TODO
+		byte[] cmd = {I2C_AD1, address, register, byteCount, data};	// TODO
 		os.write(cmd);
 		os.flush();
 		
