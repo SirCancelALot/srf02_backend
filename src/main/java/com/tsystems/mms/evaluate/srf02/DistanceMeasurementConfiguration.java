@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({Srf02Configuration.class})
 @Configuration
 public class DistanceMeasurementConfiguration {
-	
+
+
 	private final Srf02Configuration srf02Configuration;
 	
 	public DistanceMeasurementConfiguration(@Autowired Srf02Configuration srf02UsbConfiguration) {
@@ -23,7 +24,7 @@ public class DistanceMeasurementConfiguration {
 			return new SimulationDistanceProvider();
 		} else {
 			System.out.println("Starting in SENSOR mode");
-			return new Srf02Connector("COM2");
+			return new Srf02Connector("COM7");
 		}
 	}
 
