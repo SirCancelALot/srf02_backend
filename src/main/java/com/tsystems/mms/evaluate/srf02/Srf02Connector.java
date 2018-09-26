@@ -17,6 +17,8 @@ public class Srf02Connector implements DistanceMeasurementProvider
 	private static final int BAUD = 19200;
 	private static final byte I2C_AD1 = 0x55;
 	private static final byte byteCount = 0x01;
+	private byte adress = 0x00;
+	private byte register = 0x00;
 
 	private SerialPort port;
 	
@@ -41,8 +43,15 @@ public class Srf02Connector implements DistanceMeasurementProvider
 	
 	@Override
 	public double getDistance() throws IOException, InterruptedException {
-
-		return (double) -1;
+        byte respond = writeRegister(adress, register, (byte) 0x54);
+        wait(timeout);
+        byte result = readRegister(adress, register);
+        if (respond != result){
+            return result;
+        }
+        else {
+            throw new IOException("Device doesn't respond ");
+        }
 	}
 	
 	// ================================================================================================================

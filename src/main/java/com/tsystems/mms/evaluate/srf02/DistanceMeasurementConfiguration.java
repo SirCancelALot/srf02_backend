@@ -18,7 +18,7 @@ public class DistanceMeasurementConfiguration {
 	
 	@Bean 
 	public DistanceMeasurementProvider getDistanceMeasurementProvider() throws Exception {
-		boolean isSimulation = true;
+		boolean isSimulation = false;
 		if(isSimulation) {
 			System.out.println("Starting in SIMULATION mode");
 			return new SimulationDistanceProvider();
