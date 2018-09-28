@@ -24,7 +24,7 @@ public class DistanceMeasurementConfiguration {
 			return new SimulationDistanceProvider();
 		} else {
 			System.out.println("Starting in SENSOR mode");
-			return new Srf02Connector("COM7");
+			return srf02Configuration.getConnector();
 		}
 	}
 
