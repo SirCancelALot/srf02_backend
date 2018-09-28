@@ -14,14 +14,6 @@ public class DistanceService {
     private DistanceMeasurementProvider distanceMeasurementProvider;
 
     public DistanceService(){
-        Handler handler = new ConsoleHandler();
-        handler.setLevel(Level.FINE);
-
-        Formatter formatter = new XMLFormatter();
-
-        handler.setFormatter(formatter);
-
-        LOGGER.addHandler(handler);
 
     }
 
