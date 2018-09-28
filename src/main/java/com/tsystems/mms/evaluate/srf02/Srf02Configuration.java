@@ -10,13 +10,24 @@ import java.util.Enumeration;
 public class Srf02Configuration {
     private Srf02Connector connector;
     private ArrayList<String> ports;
+    private boolean deviceAvailable = false;
 
     private Srf02Configuration() throws Exception {
+        Srf02Application.LOGGER.fine("Start looking for and Configuring Device");
         ports = findPorts();
+        Srf02Application.LOGGER.fine("Availabale Ports are:" + ports.toString());
+        if(ports.isEmpty()){
+            Srf02Application.LOGGER.warning("No ports available!!! starting in Simulationmode.");
+            deviceAvailable = false;
+            return;
+        }
         connector = choosePort();
+        if(connector == null){
+            Srf02Application.LOGGER.warning("Didn't find any Device in one of the available Ports!!! starting in Simulationmode.");
+            deviceAvailable = false;
+            return;
+        }
         connector.findAndSetAddress();
-        /**System.out.println(connector.testCommunication());
-        System.out.println("tada");**/
     }
 
     private ArrayList<String> findPorts(){
@@ -24,7 +35,6 @@ public class Srf02Configuration {
         Enumeration<CommPortIdentifier> commPortIdentifierEnumeration = CommPortIdentifier.getPortIdentifiers();
         while (commPortIdentifierEnumeration.hasMoreElements()){
             CommPortIdentifier commPortIdentifier = commPortIdentifierEnumeration.nextElement();
-            System.out.println(commPortIdentifier.getName());
             ports.add(commPortIdentifier.getName());
         }
         return ports;
@@ -32,23 +42,25 @@ public class Srf02Configuration {
 
     private Srf02Connector choosePort() throws Exception{
         Srf02Connector connectortmp = null;
-        for (int i = 0; i<ports.size(); i++){
-            try {
+        try {
+            for (int i = 0; i<ports.size(); i++){
+
                 connectortmp = new Srf02Connector(ports.get(i));
                 if(connectortmp.testUSBVersion()!=-1){
+                    deviceAvailable = true;
                     break;
                 }
                 connectortmp.close();
-            }catch (Exception e){
-                throw e;
             }
-
+        }catch (Exception e){
+            throw e;
         }
         return connectortmp;
-
     }
 
     public Srf02Connector getConnector() {
         return connector;
     }
+
+    public boolean DeviceAvailable(){return deviceAvailable;}
 }

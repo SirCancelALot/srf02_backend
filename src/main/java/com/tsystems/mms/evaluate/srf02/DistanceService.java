@@ -8,7 +8,6 @@ import java.util.logging.*;
 
 @Service
 public class DistanceService {
-    private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     @Autowired
     private DistanceMeasurementProvider distanceMeasurementProvider;
@@ -18,6 +17,12 @@ public class DistanceService {
     }
 
     public Distance measure() throws Exception{
-        return new Distance(distanceMeasurementProvider.getDistance(), Distance.UNIT_CM);
+        double distance = distanceMeasurementProvider.getDistance();
+        Srf02Application.LOGGER.fine("Mesurement Result: " + distance + " " + Distance.UNIT_CM);
+        if (distance>300 || distance<20){
+            Srf02Application.LOGGER.warning("Value out of measuring range! Try again");
+            distance = -1;
+        }
+        return new Distance(distance, Distance.UNIT_CM);
     }
 }

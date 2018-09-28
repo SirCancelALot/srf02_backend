@@ -15,7 +15,22 @@ public class Srf02Connector implements DistanceMeasurementProvider
 	private static final byte I2C_AD1 = 0x55;
 	private static final byte I2C_USB = 0x5A;
 	private static final byte byteCount = 0x01;
+
 	private static final byte commandRegister = 0x00;
+	private static final byte unusedRegister = 0x01;
+	private static final byte rangeHighByteRegister = 0x02;
+	private static final byte rangeLowByteRegister = 0x03;
+	private static final byte autotuneMinHighByteRegister = 0x04;
+	private static final byte autotuneMinLowByteRegister = 0x05;
+
+	private static final byte real_Ranging_Mode_Inches = 0x50;
+	private static final byte real_Ranging_Mode_Centimeters = 0x51;
+	private static final byte real_Ranging_Mode_Microseconds = 0x52;
+
+	private static final byte fake_Ranging_Mode_Inches = 0x50;
+	private static final byte fake_Ranging_Mode_Centimeters = 0x51;
+	private static final byte fake_Ranging_Mode_Microseconds = 0x52;
+
 	private byte address = 0x00;
 
 	private SerialPort port;
@@ -37,13 +52,21 @@ public class Srf02Connector implements DistanceMeasurementProvider
 
 	
 	public String getVersion() throws IOException, InterruptedException {
+		// TODO
 		return null;
 	}
 	
 	@Override
 	public double getDistance() throws IOException, InterruptedException {
 
-        return -1;
+		writeRegister(address, commandRegister, real_Ranging_Mode_Centimeters);		// Warum Kein wait()
+
+		int high = readRegister(address, rangeHighByteRegister) & 0x00FF;
+		int low = readRegister(address, rangeLowByteRegister) & 0x00FF;
+
+		double result = (high*256) + low;
+
+		return result;
 	}
 	
 	// ================================================================================================================
@@ -54,7 +77,7 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		os = port.getOutputStream();
 		is = port.getInputStream();
 		
-		byte[] cmd = {I2C_AD1, address, register, byteCount};	// TODO
+		byte[] cmd = {I2C_AD1, (byte) (address +1), register, byteCount};	// TODO
 		os.write(cmd);
 		os.flush();
 		
@@ -121,10 +144,9 @@ public class Srf02Connector implements DistanceMeasurementProvider
 
 	public void findAndSetAddress() throws Exception {
 		for (int i = 0xE0; i<0xFF; i = i + 2){
-			byte result = readRegister((byte) (i+1), commandRegister);
+			byte result = readRegister((byte) i, commandRegister);
 			if (result != -1){
 				address = (byte) i;
-				System.out.println(address);
 				return;
 			}
 		}
@@ -146,7 +168,6 @@ public class Srf02Connector implements DistanceMeasurementProvider
 
 		is.close();
 		os.close();
-		System.out.println((byte)(result & 0x00FF));
 
 		return (byte)(result & 0x00FF);
 	}
