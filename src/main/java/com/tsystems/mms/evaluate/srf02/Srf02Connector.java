@@ -31,6 +31,8 @@ public class Srf02Connector implements DistanceMeasurementProvider
 	private static final byte fake_Ranging_Mode_Centimeters = 0x51;
 	private static final byte fake_Ranging_Mode_Microseconds = 0x52;
 
+	private static final byte revision_Command = 0x01;
+
 	private byte address = 0x00;
 
 	private SerialPort port;
@@ -52,8 +54,11 @@ public class Srf02Connector implements DistanceMeasurementProvider
 
 	
 	public String getVersion() throws IOException, InterruptedException {
-		// TODO
-		return null;
+
+		int usbFirmwareRevision = testUSBVersion();
+		int srf02SoftwareRevision = readRegister(address, commandRegister);
+
+		return "USB-I2C Frimware Revsion: " + usbFirmwareRevision + "\tSdf02 Software Revision: " + srf02SoftwareRevision;
 	}
 	
 	@Override
@@ -80,12 +85,16 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		byte[] cmd = {I2C_AD1, (byte) (address +1), register, byteCount};	// TODO
 		os.write(cmd);
 		os.flush();
+
+		Srf02Application.LOGGER.fine("Sent Commandbytes to the USB-I2C Device: " + cmd.toString());
 		
 		// READ RESULT
 		int result = is.read();
 		
 		is.close();
 		os.close();
+
+		Srf02Application.LOGGER.fine("Recieved result: " + Integer.toHexString(result));
 		
 		return (byte)(result & 0x00FF);
 	}
@@ -99,13 +108,15 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		byte[] cmd = {I2C_AD1, address, register, byteCount, data};	// TODO
 		os.write(cmd);
 		os.flush();
-		
+
 		// READ RESULT (in case of write command, too!)
 		int result = is.read();
 		
 		is.close();
 		os.close();
-		
+
+		Srf02Application.LOGGER.fine("Recieved result: " + Integer.toHexString(result));
+
 		return (byte)(result & 0x00FF);
 	}
 	
@@ -115,32 +126,6 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		}
 	}
 
-	public byte testmethod() throws Exception {
-		OutputStream os;
-		InputStream is;
-		int result = -2;
-
-		for(int i = 0xE0; i<0xFF; i = i + 2){
-
-			os = port.getOutputStream();
-			is = port.getInputStream();
-
-
-			byte[] cmd = {0x55, (byte) (i+1), 0x00, 0x01};	// TODO
-			os.write(cmd);
-			os.flush();
-
-			// READ RESULT
-			result = is.read();
-			System.out.println(result);
-
-			is.close();
-			os.close();
-		}
-
-
-		return (byte)(result & 0x00FF);
-	}
 
 	public void findAndSetAddress() throws Exception {
 		for (int i = 0xE0; i<0xFF; i = i + 2){
