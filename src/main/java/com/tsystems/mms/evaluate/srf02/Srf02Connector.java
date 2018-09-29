@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
@@ -15,7 +12,29 @@ public class Srf02Connector implements DistanceMeasurementProvider
 {
 	private static final int timeout = 100;
 	private static final int BAUD = 19200;
-	
+	private static final byte I2C_AD1 = 0x55;
+	private static final byte I2C_USB = 0x5A;
+	private static final byte byteCount = 0x01;
+
+	private static final byte commandRegister = 0x00;
+	private static final byte unusedRegister = 0x01;
+	private static final byte rangeHighByteRegister = 0x02;
+	private static final byte rangeLowByteRegister = 0x03;
+	private static final byte autotuneMinHighByteRegister = 0x04;
+	private static final byte autotuneMinLowByteRegister = 0x05;
+
+	private static final byte real_Ranging_Mode_Inches = 0x50;
+	private static final byte real_Ranging_Mode_Centimeters = 0x51;
+	private static final byte real_Ranging_Mode_Microseconds = 0x52;
+
+	private static final byte fake_Ranging_Mode_Inches = 0x50;
+	private static final byte fake_Ranging_Mode_Centimeters = 0x51;
+	private static final byte fake_Ranging_Mode_Microseconds = 0x52;
+
+	private static final byte revision_Command = 0x01;
+
+	private byte address = 0x00;
+
 	private SerialPort port;
 	
 	public Srf02Connector(String comPort) throws Exception {
@@ -31,35 +50,51 @@ public class Srf02Connector implements DistanceMeasurementProvider
 			throw new Exception("Cannot initialize SRF02 Connector: " + (e.getClass().getName()) + " :: " + e.getMessage());
 		}
 	}
+
+
 	
 	public String getVersion() throws IOException, InterruptedException {
-		// TODO
-		return null;
+
+		int usbFirmwareRevision = testUSBVersion();
+		int srf02SoftwareRevision = readRegister(address, commandRegister);
+
+		return "USB-I2C Frimware Revsion: " + usbFirmwareRevision + "\tSdf02 Software Revision: " + srf02SoftwareRevision;
 	}
 	
 	@Override
 	public double getDistance() throws IOException, InterruptedException {
-		// TODO
-		return (double) -1;
+
+		writeRegister(address, commandRegister, real_Ranging_Mode_Centimeters);		// Warum Kein wait()
+
+		int high = readRegister(address, rangeHighByteRegister) & 0x00FF;
+		int low = readRegister(address, rangeLowByteRegister) & 0x00FF;
+
+		double result = (high*256) + low;
+
+		return result;
 	}
 	
 	// ================================================================================================================
-	
+
 	private byte readRegister(byte address, byte register) throws IOException {
 		OutputStream os;
 		InputStream is;
 		os = port.getOutputStream();
 		is = port.getInputStream();
 		
-		byte[] cmd = {};	// TODO
+		byte[] cmd = {I2C_AD1, (byte) (address +1), register, byteCount};	// TODO
 		os.write(cmd);
 		os.flush();
+
+		Srf02Application.LOGGER.fine("Sent Commandbytes to the USB-I2C Device: " + cmd.toString());
 		
 		// READ RESULT
 		int result = is.read();
 		
 		is.close();
 		os.close();
+
+		Srf02Application.LOGGER.fine("Recieved result: " + Integer.toHexString(result));
 		
 		return (byte)(result & 0x00FF);
 	}
@@ -70,16 +105,18 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		os = port.getOutputStream();
 		is = port.getInputStream();
 		
-		byte[] cmd = {};	// TODO
+		byte[] cmd = {I2C_AD1, address, register, byteCount, data};	// TODO
 		os.write(cmd);
 		os.flush();
-		
+
 		// READ RESULT (in case of write command, too!)
 		int result = is.read();
 		
 		is.close();
 		os.close();
-		
+
+		Srf02Application.LOGGER.fine("Recieved result: " + Integer.toHexString(result));
+
 		return (byte)(result & 0x00FF);
 	}
 	
@@ -89,4 +126,34 @@ public class Srf02Connector implements DistanceMeasurementProvider
 		}
 	}
 
+
+	public void findAndSetAddress() throws Exception {
+		for (int i = 0xE0; i<0xFF; i = i + 2){
+			byte result = readRegister((byte) i, commandRegister);
+			if (result != -1){
+				address = (byte) i;
+				return;
+			}
+		}
+		throw new Exception("Couldn't find Srf02-Address");
+	}
+
+	public byte testUSBVersion() throws IOException {
+		OutputStream os;
+		InputStream is;
+		os = port.getOutputStream();
+		is = port.getInputStream();
+
+		byte[] cmd = {I2C_USB, 0x01, 0x00, 0x00};	// TODO
+		os.write(cmd);
+		os.flush();
+
+		// READ RESULT (in case of write command, too!)
+		int result = is.read();
+
+		is.close();
+		os.close();
+
+		return (byte)(result & 0x00FF);
+	}
 }
